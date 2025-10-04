@@ -11,12 +11,16 @@
 
       const count = ref(0)
 
-      effect(() => {
-        console.log('1 count change', count.value)
-      })
-      effect(() => {
-        console.log('2 count change', count.value)
-      })
+      effect(
+        () => {
+          console.log('1 count change', count.value)
+        },
+        {
+          scheduler() {
+            console.log('触发调度器')
+          },
+        },
+      )
 
       setTimeout(() => {
         count.value++
