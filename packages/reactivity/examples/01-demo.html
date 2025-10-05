@@ -6,25 +6,40 @@
     <title>Document</title>
   </head>
   <body>
+    <button id="btn">按钮</button>
     <script type="module">
       import { ref, effect } from '../dist/reactivity.esm.js'
+      const btn = document.getElementById('btn')
 
+      const flag = ref(true)
       const count = ref(0)
+      effect(() => {
+        flag.value
+        count.value
+        console.count('effect')
+      })
 
-      effect(
-        () => {
-          console.log('1 count change', count.value)
-        },
-        {
-          scheduler() {
-            console.log('触发调度器')
-          },
-        },
-      )
-
-      setTimeout(() => {
+      btn.onclick = () => {
+        // flag.value = !flag.value
         count.value++
-      }, 1000)
+      } 
+
+      // const count = ref(0)
+
+      // effect(
+      //   () => {
+      //     console.log('1 count change', count.value)
+      //   },
+      //   {
+      //     scheduler() {
+      //       console.log('触发调度器')
+      //     },
+      //   },
+      // )
+
+      // setTimeout(() => {
+      //   count.value++
+      // }, 1000)
     </script>
   </body>
 </html>
