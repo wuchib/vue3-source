@@ -1,4 +1,4 @@
-import { Link } from './system'
+import { endTrack, Link, startTrack } from './system'
 
 // 用来保存当前正在执行的effect函数
 export let activeSub
@@ -21,10 +21,14 @@ export class ReactiveEffect {
     const preSub = activeSub
     // 每次执行 fn 之前，把 this 放在 activeSub 上
     activeSub = this
-    this.depsTail = undefined
+    startTrack(this)
+    // this.depsTail = undefined
     try {
       return this.fn()
     } finally {
+
+      endTrack(this)
+
       // 执行完毕后，恢复之前的 activeSub
       activeSub = preSub
     }
@@ -45,6 +49,7 @@ export class ReactiveEffect {
   }
 }
 
+
 export function effect(fn, options) {
   const e = new ReactiveEffect(fn)
 
@@ -61,5 +66,5 @@ export function effect(fn, options) {
    * 把 effect 挂载到 runner 上，这样用户就可以通过 runner.effect 拿到 ReactiveEffect 实例
    */
   runner.effect = e
-  return runner 
+  return runner
 }

@@ -42,7 +42,7 @@ export function link(dep, sub) {
   const nextDep = currentDep === undefined ? sub.deps : currentDep.nextDep
   if(nextDep && nextDep.dep === dep) {
     sub.depsTail = nextDep
-    console.log('复用链表节点', dep);
+    // console.log('复用链表节点', dep);
     return
   }
 
@@ -53,7 +53,7 @@ export function link(dep, sub) {
     preSub: undefined,
 
     dep,
-    nextDep: undefined,
+    nextDep,  // 创建新节点的时候，nextDep 指向复用没成功的 dep
   }
 
   // 将链表节点和 dep 建立关联关系
@@ -90,4 +90,72 @@ export function propagate(subs) {
     link = link.nextSub
   }
   queuedEffect.forEach(effect => effect.notify())
+}/**
+ * 开始追踪依赖，将depsTail 尾节点设置为 undefined
+ * @param sub
+ */
+export function startTrack(sub) {
+  sub.depsTail = undefined
 }
+/**
+ * 结束追踪，找到需要清理的依赖
+ * @param sub
+ */
+export function endTrack(sub) {
+  const depsTail = sub.depsTail
+
+  /**
+   * depsTail 有， 并且 depsTail 还有 nextDep ，我们应该把他们的依赖关系清理掉
+   */
+  if (depsTail) {
+    if (depsTail.nextDep) {
+      console.log('把他移除', depsTail.nextDep)
+      clearTracking(depsTail.nextDep)
+      depsTail.nextDep = undefined
+    }
+  } else if (sub.deps) {
+    console.log('从头开始删除', sub.deps)
+    clearTracking(sub.deps)
+    sub.deps = undefined
+  }
+}
+/**
+ * 清理依赖关系
+ * @param link
+ */
+
+
+export function clearTracking(link) {
+  while (link) {
+    const { sub, preSub, nextSub, nextDep, dep } = link
+
+    /**
+     * 如果 preSub 有， 那就把 preSub 的 下一个节点，指向当前节点的下一个
+     * 如果没有， 那就表示当前节点是头节点， 那就把 dep 的头节点指向当前节点的下一个
+     */
+    if (preSub) {
+      preSub.nextSub = nextSub
+      link.nextSub = undefined
+    } else {
+      dep.subs = nextSub
+    }
+
+    /**
+     * 如果下一个有，那就把 nextSub 的上一个节点，指向当前节点的上一个节点
+     * 如果洗一个没有， 那就表示当前节点是尾节点， 那就把 dep 的尾节点指向当前节点的上一个节点
+     */
+    if (nextSub) {
+      nextSub.preSub = preSub
+      link.preSub = undefined
+    } else {
+      dep.subsTail = preSub
+    }
+
+    link.dep = link.sub = undefined
+
+    link.nextDep = undefined
+
+    link = nextDep
+  }
+}
+
