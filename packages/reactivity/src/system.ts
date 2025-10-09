@@ -28,8 +28,11 @@ export interface Link {
   // 依赖项
   dep: Dep
   // 下一个依赖项节点
-  nextDep: Dep | undefined
+  nextDep: Link | undefined
 }
+
+// 保存已经被清理掉的节点，留着复用
+let linkPool: Link
 
 export function link(dep, sub) {
   // 尝试复用链表节点
@@ -40,20 +43,33 @@ export function link(dep, sub) {
    */
   const currentDep = sub.depsTail
   const nextDep = currentDep === undefined ? sub.deps : currentDep.nextDep
-  if(nextDep && nextDep.dep === dep) {
+  if (nextDep && nextDep.dep === dep) {
     sub.depsTail = nextDep
     // console.log('复用链表节点', dep);
     return
   }
 
   // 如果 activeSub 有，那就保存起来，等我更新的时候，触发
-  const newLink: Link = {
-    sub,
-    nextSub: undefined,
-    preSub: undefined,
+  let newLink
+  /**
+   * 看一下 linkPool 有没有，如果有就复用，没有就创建新的
+   */
+  if (linkPool) {
+    console.log('复用链表linkPool')
+    newLink = linkPool
+    linkPool = linkPool.nextDep // 复用链表节点，取出下一个节点
+    newLink.nextDep = nextDep
+    newLink.dep = dep
+    newLink.sub = sub
+  } else {
+    newLink = {
+      sub,
+      nextSub: undefined,
+      preSub: undefined,
 
-    dep,
-    nextDep,  // 创建新节点的时候，nextDep 指向复用没成功的 dep
+      dep,
+      nextDep, // 创建新节点的时候，nextDep 指向复用没成功的 dep
+    }
   }
 
   // 将链表节点和 dep 建立关联关系
@@ -71,7 +87,6 @@ export function link(dep, sub) {
     dep.subsTail = newLink
   }
 
-
   // 将链表节点和 sub 建立关联关系
   if (sub.depsTail) {
     sub.depsTail.nextDep = newLink
@@ -86,22 +101,27 @@ export function propagate(subs) {
   let link = subs
   let queuedEffect = []
   while (link) {
-    queuedEffect.push(link.sub)
+    const sub = link.sub
+    if (sub.tracking) {
+      queuedEffect.push(link.sub)
+    }
     link = link.nextSub
   }
   queuedEffect.forEach(effect => effect.notify())
-}/**
+} /**
  * 开始追踪依赖，将depsTail 尾节点设置为 undefined
  * @param sub
  */
 export function startTrack(sub) {
   sub.depsTail = undefined
+  sub.tracking = true
 }
 /**
  * 结束追踪，找到需要清理的依赖
  * @param sub
  */
 export function endTrack(sub) {
+  sub.tracking = false
   const depsTail = sub.depsTail
 
   /**
@@ -123,7 +143,6 @@ export function endTrack(sub) {
  * 清理依赖关系
  * @param link
  */
-
 
 export function clearTracking(link) {
   while (link) {
@@ -153,9 +172,12 @@ export function clearTracking(link) {
 
     link.dep = link.sub = undefined
 
-    link.nextDep = undefined
+    /**
+     * 不要的节点给 linkPool, 让他去复用吧
+     */
+    link.nextDep = linkPool
+    linkPool = link
 
     link = nextDep
   }
 }
-
