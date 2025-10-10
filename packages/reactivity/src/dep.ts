@@ -1,5 +1,5 @@
-import { activeSub } from './effect';
-import { link, Link, propagate } from './system';
+import { activeSub } from './effect'
+import { link, Link, propagate } from './system'
 
 /**
  * 绑定 target 的 key 关联的所有的 Dep
@@ -13,9 +13,9 @@ import { link, Link, propagate } from './system';
 export const targetMap = new WeakMap()
 
 export class Dep {
-  subs: Link;
-  subTail: Link;
-  constructor() { }
+  subs: Link
+  subTail: Link
+  constructor() {}
 }
 
 export function track(target, key) {
@@ -52,9 +52,9 @@ export function track(target, key) {
   }
 
   link(dep, activeSub)
+}
 
-  console.log('dep =>', dep)
-}export function trigger(target, key) {
+export function trigger(target, key) {
   const depsMap = targetMap.get(target)
   if (!depsMap) {
     /**
@@ -74,4 +74,3 @@ export function track(target, key) {
    */
   propagate(dep.subs)
 }
-

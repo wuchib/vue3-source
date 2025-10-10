@@ -9,7 +9,6 @@
     <div id="app"></div>
     <script type="module">
       import { ref, effect, reactive } from '../dist/reactivity.esm.js'
-
       const state = reactive({
         a: 0
       })
@@ -20,6 +19,7 @@
 
       setTimeout(() => {
         state.a = 1
+        console.log('state.a = 1');
       }, 1000);
     </script>
   </body>
