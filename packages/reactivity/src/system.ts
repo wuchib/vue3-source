@@ -3,7 +3,7 @@ import { ReactiveEffect } from './effect'
 /**
  * 依赖项
  */
-interface Dep {
+interface Dependency {
   // 订阅者链表的头节点 head
   subs: Link | undefined
   // 订阅者链表的尾节点 tail
@@ -26,7 +26,7 @@ export interface Link {
   preSub: Link | undefined
 
   // 依赖项
-  dep: Dep
+  dep: Dependency
   // 下一个依赖项节点
   nextDep: Link | undefined
 }
