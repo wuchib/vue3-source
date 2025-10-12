@@ -3,14 +3,14 @@ import { ReactiveEffect } from './effect'
 /**
  * 依赖项
  */
-interface Dependency {
+export interface Dependency {
   // 订阅者链表的头节点 head
   subs: Link | undefined
   // 订阅者链表的尾节点 tail
   subsTail: Link | undefined
 }
 
-interface Sub {
+export interface Sub {
   // 订阅者
   deps: Link | undefined
   // 订阅者链表的尾节点 tail
@@ -97,13 +97,30 @@ export function link(dep, sub) {
   }
 }
 
+function processComputedUpdate(sub) {
+  /**
+   * 更新计算属性
+   * 1. 调用 update
+   * 2. 通知 subs 链表上的所有 sub，重新执行
+   */
+
+  if (sub.subs && sub.update()) {
+    propagate(sub.subs)
+  }
+}
+
 export function propagate(subs) {
   let link = subs
   let queuedEffect = []
   while (link) {
     const sub = link.sub
-    if (sub.tracking) {
-      queuedEffect.push(link.sub)
+    if (!sub.tracking && !sub.dirty) {
+      sub.dirty = true
+      if ('update' in sub) {
+        processComputedUpdate(sub)
+      } else {
+        queuedEffect.push(link.sub)
+      }
     }
     link = link.nextSub
   }
@@ -123,6 +140,8 @@ export function startTrack(sub) {
 export function endTrack(sub) {
   sub.tracking = false
   const depsTail = sub.depsTail
+  // 追踪完了。 不脏了
+  sub.dirty = false
 
   /**
    * depsTail 有， 并且 depsTail 还有 nextDep ，我们应该把他们的依赖关系清理掉

@@ -11,3 +11,7 @@ export function isObject(value: any): value is Record<any, any> {
 export function hasChanged(newValue, oldValue) {
   return !Object.is(newValue, oldValue)
 }
+
+export function isFunction(value: any): value is Function {
+  return typeof value === 'function'
+} 

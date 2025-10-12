@@ -1,9 +1,13 @@
-import { endTrack, Link, startTrack } from './system'
+import { endTrack, Link, startTrack, Sub } from './system'
 
 // 用来保存当前正在执行的effect函数
 export let activeSub
 
-export class ReactiveEffect {
+export function setActiveSub(sub) {
+  activeSub = sub
+}
+
+export class ReactiveEffect implements Sub {
   /**
    * 依赖项链表的头节点
    */
@@ -16,19 +20,20 @@ export class ReactiveEffect {
 
   tracking = false
 
+  dirty = false
+
   constructor(public fn) {}
 
   run() {
     // 先把上一个 activeSub 保存起来, 用来处理嵌套的逻辑
     const preSub = activeSub
     // 每次执行 fn 之前，把 this 放在 activeSub 上
-    activeSub = this
+    setActiveSub(this)
     startTrack(this)
     // this.depsTail = undefined
     try {
       return this.fn()
     } finally {
-
       endTrack(this)
 
       // 执行完毕后，恢复之前的 activeSub
@@ -50,7 +55,6 @@ export class ReactiveEffect {
     this.run()
   }
 }
-
 
 export function effect(fn, options) {
   const e = new ReactiveEffect(fn)
